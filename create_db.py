@@ -78,18 +78,3 @@ def execute_query(connection, query):
     except Error as e:
         print(f"The error '{e}' occurred")
 # Main execution
-if __name__ == "__main__":
-    # Replace these with your actual MySQL credentials
-    host = "mysql-3daf98a4-jobs-search-engine.e.aivencloud.com"  # e.g., "localhost"
-    port = 28306         # Default MySQL port
-    username = "avnadmin"
-    database = "jobs_db"
-
-    # Create a connection to the database
-    connection = create_connection(host, port, username, password, database)
-
-    if connection:
-        # Execute the SQL script to create tables
-        execute_query(connection, sql_script)
-        connection.close()
-        print("MySQL connection is closed")
