@@ -41,25 +41,35 @@ def search_jobs(
 @app.post("/sign_up")
 async def sign_up(form_data: FormData):
     # Check if the user already exists
-    if db.user_exists(form_data.mail):
+    """if db.user_exists(form_data.mail):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Attempt to add the user to the database
-    success = db.add_user(
+    success = db.add_user_infos(
         nom=form_data.nom,
         prenom=form_data.prenom,
-        motDePass=form_data.motDePass,
-        mail=form_data.mail,
+        password=form_data.motDePass,
+        email=form_data.mail,
         telephone=form_data.telephone,
         description=form_data.description,
-        domaineExpertise=form_data.domaineExpertise,
+        domaine_d_expertise=form_data.domaineExpertise,
         localisation=form_data.localisation,
-        diplomes=form_data.diplomes,
-        competences=form_data.competences,
-        photo=form_data.photo
-    )
+        lien_photo=form_data.photo
+    )"""
+    for val in form_data.diplomes:
+        response = db.add_diplome(
+            intitule=val.intitule,
+            etablissement_d_obtention=val.etablissement,
+            annee=val.annee,
+            specialite=val.specialite,
+            niveau=val.niveau
+        )
+        print(response)
+    """for val in form_data.competences:
+        response = db.add_skill(val)
+        print(response)"""
 
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to register user")
+    """if not success:
+        raise HTTPException(status_code=500, detail="Failed to register user")"""
 
     return {"message": "User registered successfully", "data": form_data.dict()}

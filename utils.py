@@ -5,7 +5,9 @@ from typing import List
 class Diplome(BaseModel):
     etablissement: str
     annee: str
-    diplome: str
+    specialite: str
+    intitule: str
+    niveau:str
 
 class FormData(BaseModel):
     nom: str
@@ -16,6 +18,6 @@ class FormData(BaseModel):
     description: str
     domaineExpertise: str
     localisation: str
+    photo: str
     diplomes: List[Diplome]
     competences: List[str]
-    photo: str
