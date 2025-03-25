@@ -83,7 +83,6 @@ if __name__ == "__main__":
     host = "mysql-3daf98a4-jobs-search-engine.e.aivencloud.com"  # e.g., "localhost"
     port = 28306         # Default MySQL port
     username = "avnadmin"
-    password = "AVNS_bYy3XhmD_soFTkkDfyt"
     database = "jobs_db"
 
     # Create a connection to the database
