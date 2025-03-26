@@ -6,7 +6,7 @@ import os
 import bcrypt
 from datetime import datetime, timedelta
 class DBClass:
-    def __init__(self, path="/home/redouane/Downloads/connection_infos.json"):
+    def __init__(self, path="connection_infos.json"):
         self.path = path
         self.cnx = None
         self.establish_connection()
