@@ -3,7 +3,7 @@ import mysql.connector
 from mysql.connector import Error
 import os
 import bcrypt
-
+from utils import FormData
 class DBClass:
     def __init__(self, path="/home/redouane/Downloads/connection_infos.json"):
         self.path = path
@@ -137,10 +137,15 @@ class DBClass:
             print(f"Error adding user: {e}")
             return False
 
-    def add_diplome(self, intitule, etablissement_d_obtention, annee, specialite=None, niveau=None):
+    def add_diplome(self, val):
         """
         Add a new diplome to the database with a hashed password.
         """
+        intitule = val.intitule
+        etablissement_d_obtention = val.etablissement
+        annee = val.annee
+        specialite = val.specialite
+        niveau = val.niveau
         if not self.cnx:
             print("No active database connection.")
             return False
@@ -192,7 +197,7 @@ class DBClass:
             return False
         if self.skill_exists(skill):
             print("Skill already exists.")
-            return False
+            return False, self.get_skill_id(skill)
         try:
             # Insert the user into the database
             cursor = self.cnx.cursor()
@@ -206,7 +211,7 @@ class DBClass:
             id = cursor.lastrowid
             cursor.close()
             print("Skill added successfully.")
-            return True,cursor.id
+            return True, id
         except Error as e:
             print(f"Error adding Skill: {e}")
             return False
@@ -225,4 +230,96 @@ class DBClass:
             return result[0]
         except Error as e:
             print(f"Error: {e}")
+            return False
+
+    def get_skill_id(self, skill):
+
+        if not self.cnx:
+            print("No active database connection.")
+            return False
+
+        try:
+            cursor = self.cnx.cursor()
+            query = "SELECT id FROM Skill WHERE skill = %s"
+            cursor.execute(query, (skill, ))
+            result = cursor.fetchone()
+            cursor.close()
+            return result[0]
+        except Error as e:
+            print(f"Error: {e}")
+            return False
+    def sing_up(self, form_data):
+        res = self.add_user_infos(
+                                    nom=form_data.nom,
+                                    prenom=form_data.prenom,
+                                    password=form_data.motDePass,
+                                    email=form_data.mail,
+                                    telephone=form_data.telephone,
+                                    description=form_data.description,
+                                    domaine_d_expertise=form_data.domaineExpertise,
+                                    localisation=form_data.localisation,
+                                    lien_photo=form_data.photo
+                                )
+        if not res: return res
+        response, user_id = res
+        diplome_res = [self.add_diplome(val) for val in form_data.diplomes]
+        diplome_stats, diplomes_id = [1 if val[0] else 0 for val in diplome_res], [val[1] for val in diplome_res]
+        skill_res = [self.add_skill(val) for val in form_data.competences]
+        skill_stats, skills_id = [1 if val[0] else 0 for val in skill_res], [val[1] for val in skill_res]
+        user_diplome_stats = [1 if self.add_user_diplome(user_id, val) else 0 for val in diplomes_id]
+        user_skill_stats = [1 if self.add_user_skill(user_id, val) else 0 for val in skills_id]
+        return  {
+            "Newly added user": 1,
+            "Newly added diploma": sum(diplome_stats),
+            "Newly added skill": sum(skill_stats),
+            "Newly added user skills": sum(user_skill_stats),
+            "Newly added user diplomas": sum(user_diplome_stats)
+        }
+
+    def add_user_skill(self, user_id, skill_id, mastering=None):
+        """
+        Add a new Skill to the database with a hashed password.
+        """
+        if not self.cnx:
+            print("No active database connection.")
+            return False
+        try:
+            # Insert the user into the database
+            cursor = self.cnx.cursor()
+            query = """
+                INSERT INTO User_Skills (id_user, id_skill, mastering)
+                VALUES (%s, %s, %s)
+            """
+            values = (user_id, skill_id, mastering)
+            cursor.execute(query, values)
+            self.cnx.commit()
+            cursor.close()
+            print("User skill added successfully.")
+            return True
+        except Error as e:
+            print(f"Error adding user Skill: {e}")
+            return False
+
+    def add_user_diplome(self, user_id, diplome_id):
+        """
+        Add a new Skill to the database with a hashed password.
+        """
+        if not self.cnx:
+            print("No active database connection.")
+            return False
+        try:
+            # Insert the user into the database
+            cursor = self.cnx.cursor()
+            query = """
+                INSERT INTO User_Diplomes (id_user, id_diplome)
+                VALUES (%s, %s)
+            """
+            values = (user_id, diplome_id)
+            cursor.execute(query, values)
+            self.cnx.commit()
+            cursor.close()
+            print("User diplome added successfully.")
+            return True
+        except Error as e:
+            print(f"Error adding user diplome: {e}")
             return False
