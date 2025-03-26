@@ -1,9 +1,10 @@
 import json
+import time
 import mysql.connector
 from mysql.connector import Error
 import os
 import bcrypt
-from utils import FormData
+from datetime import datetime, timedelta
 class DBClass:
     def __init__(self, path="/home/redouane/Downloads/connection_infos.json"):
         self.path = path
@@ -322,4 +323,76 @@ class DBClass:
             return True
         except Error as e:
             print(f"Error adding user diplome: {e}")
+            return False
+
+    def verify_password(self, email, password):
+        """
+        Verify the user's password.
+        """
+        if not self.cnx:
+            print("No active database connection.")
+            return False
+
+        try:
+            cursor = self.cnx.cursor()
+            query = "SELECT mot_de_pass FROM user WHERE mail = %s"
+            cursor.execute(query, (email,))
+            result = cursor.fetchone()
+            cursor.close()
+
+            if result:
+                hashed_password = result[0].encode('utf-8')
+                return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+            return False
+        except Error as e:
+            print(f"Error verifying password: {e}")
+            return False
+
+    def generate_token(self):
+        """
+        Generate a unique token and store it in the database with an expiration time of 1 hour.
+        """
+        if not self.cnx:
+            print("No active database connection.")
+            return None
+
+        token = hex(int(time.time() * 1000))[2:].zfill(32)
+        expires_at = datetime.utcnow() + timedelta(hours=1)
+
+        try:
+            cursor = self.cnx.cursor()
+            query = """
+                INSERT INTO tokens (token, expires_at)
+                VALUES (%s, %s)
+            """
+            cursor.execute(query, (token, expires_at))
+            self.cnx.commit()
+            cursor.close()
+            return token
+        except Error as e:
+            print(f"Error generating token: {e}")
+            return None
+
+    def validate_token(self, token):
+        """
+        Check if the token exists in the database.
+        Returns True if the token exists, False otherwise.
+        """
+        if not self.cnx:
+            print("No active database connection.")
+            return False
+
+        try:
+            cursor = self.cnx.cursor()
+            query = """
+                SELECT 1 FROM tokens WHERE token = %s
+            """
+            cursor.execute(query, (token,))
+            result = cursor.fetchone()  # Fetch the result (if any)
+            cursor.close()
+
+            # Return True if the token exists, False otherwise
+            return bool(result)
+        except Error as e:
+            print(f"Error validating token: {e}")
             return False

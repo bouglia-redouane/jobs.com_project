@@ -4,7 +4,7 @@ from utils import FormData
 from DB import DBClass  # Import the DBClass
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
-
+from datetime import timedelta
 app = FastAPI()
 
 # Configuration CORS
@@ -47,3 +47,38 @@ async def sign_up(form_data: FormData):
         raise HTTPException(status_code=500, detail="Failed to register user")
     print(response)
     return {"message": "User registered successfully", "data": form_data.dict()}
+
+@app.post("/login")
+async def login(email: str, password: str):
+    """
+    API endpoint to authenticate a user and generate a token.
+    """
+    if not db.user_exists(email):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Verify the password
+    if not db.verify_password(email, password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = db.generate_token()
+    if not token:
+        raise HTTPException(status_code=500, detail="Failed to generate token")
+
+    return {
+        "message": "Login successful",
+        "token": token,
+        "expires_in": int(timedelta(hours=1).total_seconds())  # Token expires in 1 hour
+    }
+
+
+@app.get("/validate-token")
+async def validate_token(token: str):
+    """
+    API endpoint to validate a token.
+    """
+    is_valid = db.validate_token(token)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    return is_valid
+
